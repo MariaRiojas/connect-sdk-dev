@@ -1,43 +1,72 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { AgentClient } from "@amazon-connect/contact";
+import { AmazonConnectApp } from "@amazon-connect/app";
 import { AgentStateChangedEventData } from "@amazon-connect/contact";
 
+const handler = async (data: AgentStateChangeEventData) => {
+  console.log(data);
+};
+
+// Inicializa AmazonConnectApp solo una vez
+const { provider } = AmazonConnectApp.init({
+  onCreate: (event) => {
+    const { appInstanceId } = event.context;
+    console.log("App initialized: ", appInstanceId);
+  },
+  onDestroy: (event) => {
+    console.log("App being destroyed");
+  },
+});
+
 const AmazonConnectAgent = () => {
-  // Instanciar el cliente del agente
-  const agentClient = new AgentClient();
-
-  // Callback para manejar el cambio de estado del agente
-  const handleStateChange = async (data: AgentStateChangedEventData) => {
-    console.log("Estado del agente cambiado:", data);
-  };
-
-  // Obtener el ARN del agente
-  const getAgentArn = async () => {
-    try {
-      const arn = await agentClient.getARN();
-      console.log(`ARN del agente: ${arn}`);
-    } catch (error) {
-      console.error("Error obteniendo el ARN del agente:", error);
-    }
-  };
+  const [agentInfo, setAgentInfo] = useState(null);
 
   useEffect(() => {
-    // Suscribirse al evento de cambio de estado del agente
-    agentClient.onStateChanged(handleStateChange);
+    const agentClient = new AgentClient();
+    console.log(agentClient);
 
-    // Obtener el ARN al montar el componente
-    getAgentArn();
-
-    // Cleanup al desmontar el componente
+    const handleStateChange = (state) => {
+      console.log("Cambio de estado del agente:", state);
+    };
+  
+    try {
+      agentClient.onStateChanged(handleStateChange);
+    } catch (error) {
+      console.error("Error al suscribirse al estado del agente:", error);
+    }
+  
+    const fetchAgentInfo = async () => {
+      try {
+        const info = await agentClient.getAgentData();
+        console.log("Información del agente:", info);
+        setAgentInfo(info);
+      } catch (error) {
+        console.error("Error al obtener datos del agente:", error);
+      }
+    };
+  
+    fetchAgentInfo();
+  
     return () => {
-      agentClient.offStateChanged(handleStateChange); // Remover el listener
+      try {
+        agentClient.offStateChanged(handleStateChange);
+      } catch (error) {
+        console.error("Error al desuscribirse del estado del agente:", error);
+      }
     };
   }, []);
+  
 
   return (
     <div>
       <h1>Amazon Connect Agent</h1>
-      <p>Monitorizando el estado del agente...</p>
+      {agentInfo ? (
+        <div>
+          <p>Nombre: {agentInfo.configuration.firstname}</p>
+        </div>
+      ) : (
+        <p>Conectando al agente de Amazon Connect...</p>
+      )}
     </div>
   );
 };

@@ -6,6 +6,8 @@
     "@amazon-connect/app": "^1.0.4",
     "@amazon-connect/contact": "^1.0.4",
     "@amazon-connect/theme": "^1.0.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
     "cra-template": "1.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
